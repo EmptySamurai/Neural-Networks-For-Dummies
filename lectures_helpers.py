@@ -2,7 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import patches
 from matplotlib import animation, rc
-rc('animation', html='html5', writer='avconv')
+from shutil import which
+import cvxpy as cvx
+
+if which('avconv') is not None:
+	rc('animation', html='html5', writer='avconv')
+elif which('ffmpeg') is not None:
+	rc('animation', html='html5', writer='ffmpeg')
 
 def minimize_poly(poly, starting_point, tol = 1e-5, lr=0.01):
 	poly_deriv = poly.deriv()
@@ -70,3 +76,19 @@ def animate_poly_minimization_with_slope(poly, x, starting_point):
 								   frames=len(point_coords), interval=20, blit=True)
 	plt.close()
 	return anim
+	
+class L1LinearRegression():
+	def __init__(self):
+		self.w = 0
+		self.c = 0
+
+	def fit(self,x, y):
+		w, c = cvx.Variable(), cvx.Variable()
+		objective = cvx.Minimize(cvx.sum_entries(cvx.abs(w*x+c-y)))
+		prob = cvx.Problem(objective, [])
+		result = prob.solve()
+		self.w = w.value
+		self.c = c.value
+
+	def predict(self,x):
+		return self.w*x+self.c
